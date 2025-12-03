@@ -1,0 +1,1854 @@
+<html lang="en"><head></head><body><x-artifact type="html" name="sortsage-complete-dashboard-with-clear">
+
+
+
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SortSage Performance Analytics - Dynamic Dashboard</title>
+    <script src="https://d1hilrkz3ka39e.cloudfront.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+    <script src="https://d1hilrkz3ka39e.cloudfront.net/ajax/libs/gsap/3.12.5/gsap.min.js"></script>
+    <script src="https://d1hilrkz3ka39e.cloudfront.net/ajax/libs/PapaParse/5.4.1/papaparse.min.js"></script>
+    <style>
+        :root {
+            --amazon-orange: #FF9900;
+            --amazon-blue: #146EB4;
+            --amazon-dark: #232F3E;
+            --success-green: #067D62;
+            --warning-yellow: #F0B323;
+            --alert-red: #D13212;
+        }
+        
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: linear-gradient(135deg, #f5f7fa 0%, #e8ecf1 100%);
+            color: #333;
+        }
+        
+        .dashboard-container {
+            display: flex;
+            min-height: 100vh;
+        }
+        
+        .sidebar {
+            width: 280px;
+            background: var(--amazon-dark);
+            color: white;
+            padding: 24px;
+            position: fixed;
+            height: 100vh;
+            overflow-y: auto;
+            box-shadow: 4px 0 12px rgba(0,0,0,0.1);
+        }
+        
+        .sidebar-header {
+            margin-bottom: 32px;
+            padding-bottom: 20px;
+            border-bottom: 2px solid var(--amazon-orange);
+        }
+        
+        .sidebar-logo {
+            font-size: 20px;
+            font-weight: bold;
+            color: var(--amazon-orange);
+            margin-bottom: 8px;
+        }
+        
+        .sidebar-subtitle {
+            font-size: 12px;
+            color: #aaa;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+        
+        .nav-section {
+            margin-bottom: 24px;
+        }
+        
+        .nav-title {
+            font-size: 11px;
+            color: #888;
+            text-transform: uppercase;
+            letter-spacing: 1.5px;
+            margin-bottom: 12px;
+            font-weight: 600;
+        }
+        
+        .nav-item {
+            padding: 12px 16px;
+            margin-bottom: 4px;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            font-size: 14px;
+        }
+        
+        .nav-item:hover {
+            background: rgba(255, 153, 0, 0.1);
+            transform: translateX(4px);
+        }
+        
+        .nav-item.active {
+            background: var(--amazon-orange);
+            color: white;
+            font-weight: 600;
+        }
+        
+        .confidence-badge {
+            padding: 2px 8px;
+            border-radius: 12px;
+            font-size: 10px;
+            font-weight: bold;
+            margin-left: auto;
+        }
+        
+        .confidence-high {
+            background: var(--success-green);
+            color: white;
+        }
+        
+        .main-content {
+            margin-left: 280px;
+            flex: 1;
+            padding: 32px;
+            max-height: 100vh;
+            overflow-y: auto;
+        }
+        
+        .header-controls {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            display: flex;
+            gap: 12px;
+            z-index: 50;
+        }
+        
+        .control-btn {
+            padding: 12px 20px;
+            background: white;
+            border: 2px solid var(--amazon-orange);
+            color: var(--amazon-orange);
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: 600;
+            transition: all 0.3s ease;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        }
+        
+        .control-btn:hover {
+            background: var(--amazon-orange);
+            color: white;
+            transform: translateY(-2px);
+        }
+        
+        .control-btn.danger {
+            border-color: var(--alert-red);
+            color: var(--alert-red);
+        }
+        
+        .control-btn.danger:hover {
+            background: var(--alert-red);
+            color: white;
+        }
+        
+        .section {
+            background: white;
+            border-radius: 16px;
+            padding: 32px;
+            margin-bottom: 32px;
+            box-shadow: 0 4px 16px rgba(0,0,0,0.08);
+        }
+        
+        .section-header {
+            margin-bottom: 24px;
+            padding-bottom: 16px;
+            border-bottom: 3px solid var(--amazon-orange);
+        }
+        
+        .section-title {
+            font-size: 28px;
+            font-weight: bold;
+            color: var(--amazon-dark);
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+        
+        .section-subtitle {
+            font-size: 14px;
+            color: #666;
+            margin-top: 4px;
+        }
+        
+        .kpi-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+            gap: 20px;
+            margin-bottom: 32px;
+        }
+        
+        .kpi-card {
+            background: linear-gradient(135deg, #fff 0%, #f9fafb 100%);
+            border: 2px solid #e5e7eb;
+            border-radius: 12px;
+            padding: 24px;
+            transition: all 0.3s ease;
+        }
+        
+        .kpi-card:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 8px 24px rgba(0,0,0,0.12);
+            border-color: var(--amazon-orange);
+        }
+        
+        .kpi-label {
+            font-size: 13px;
+            color: #666;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            margin-bottom: 8px;
+            font-weight: 600;
+        }
+        
+        .kpi-value {
+            font-size: 36px;
+            font-weight: bold;
+            color: var(--amazon-dark);
+            margin-bottom: 8px;
+        }
+        
+        .kpi-trend {
+            font-size: 13px;
+            color: var(--success-green);
+        }
+        
+        .chart-container {
+            position: relative;
+            height: 400px;
+            margin: 24px 0;
+        }
+        
+        .data-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 24px 0;
+        }
+        
+        .data-table th {
+            background: #2c3e50;
+            color: white;
+            padding: 16px;
+            text-align: left;
+            font-weight: 600;
+            font-size: 13px;
+            text-transform: uppercase;
+        }
+        
+        .data-table td {
+            padding: 16px;
+            border-bottom: 1px solid #e5e7eb;
+            font-size: 14px;
+        }
+        
+        .data-table tr:hover {
+            background: #f9fafb;
+        }
+        
+        .upload-zone {
+            border: 3px dashed var(--amazon-orange);
+            border-radius: 16px;
+            padding: 60px 40px;
+            text-align: center;
+            background: linear-gradient(135deg, #fff5e6 0%, #ffe6cc 100%);
+            cursor: pointer;
+            transition: all 0.3s ease;
+            margin-bottom: 32px;
+        }
+        
+        .upload-zone:hover {
+            background: linear-gradient(135deg, #ffe6cc 0%, #ffd9b3 100%);
+            transform: scale(1.02);
+        }
+        
+        .upload-zone.dragover {
+            background: linear-gradient(135deg, #ffd9b3 0%, #ffcc99 100%);
+            border-color: var(--amazon-dark);
+        }
+        
+        .upload-icon {
+            font-size: 64px;
+            margin-bottom: 16px;
+        }
+        
+        .upload-title {
+            font-size: 24px;
+            font-weight: bold;
+            color: var(--amazon-dark);
+            margin-bottom: 8px;
+        }
+        
+        .upload-subtitle {
+            font-size: 14px;
+            color: #666;
+            margin-bottom: 24px;
+        }
+        
+        .upload-btn {
+            padding: 14px 32px;
+            background: var(--amazon-orange);
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+        }
+        
+        .instructions-box {
+            background: linear-gradient(135deg, #e0e7ff 0%, #c7d2fe 100%);
+            border: 2px solid var(--amazon-blue);
+            border-radius: 12px;
+            padding: 24px;
+            margin-bottom: 32px;
+        }
+        
+        .instructions-title {
+            font-size: 20px;
+            font-weight: bold;
+            color: var(--amazon-blue);
+            margin-bottom: 16px;
+        }
+        
+        .insight-card {
+            background: linear-gradient(135deg, #e6f7ff 0%, #d6f0ff 100%);
+            border-left: 4px solid var(--amazon-blue);
+            padding: 20px;
+            border-radius: 8px;
+            margin: 16px 0;
+        }
+        
+        .rating-star {
+            color: #F0B323;
+            font-size: 16px;
+        }
+        
+        .feedback-critical {
+            color: var(--alert-red);
+            font-weight: 600;
+        }
+        
+        .country-card {
+            background: white;
+            border: 2px solid #e5e7eb;
+            border-radius: 12px;
+            padding: 24px;
+            display: flex;
+            align-items: center;
+            gap: 20px;
+            transition: all 0.3s ease;
+            margin-bottom: 20px;
+        }
+
+        .country-card:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 8px 24px rgba(0,0,0,0.12);
+        }
+
+        .country-flag {
+            font-size: 48px;
+        }
+
+        .country-name {
+            font-size: 20px;
+            font-weight: bold;
+            color: var(--amazon-dark);
+        }
+
+        .country-stats {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 16px;
+            margin-top: 12px;
+        }
+
+        .country-stat-value {
+            font-size: 24px;
+            font-weight: bold;
+            color: var(--amazon-orange);
+        }
+
+        .country-stat-label {
+            font-size: 11px;
+            color: #666;
+            text-transform: uppercase;
+        }
+
+        .doc-badge {
+            display: inline-block;
+            padding: 4px 10px;
+            background: #e0f2fe;
+            color: var(--amazon-blue);
+            border-radius: 12px;
+            font-size: 12px;
+            font-weight: 600;
+            margin-right: 8px;
+            margin-bottom: 8px;
+        }
+        
+        /* Confirmation Modal */
+        .confirm-modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.7);
+            z-index: 1000;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .confirm-modal.active {
+            display: flex;
+        }
+        
+        .confirm-content {
+            background: white;
+            border-radius: 16px;
+            padding: 32px;
+            max-width: 500px;
+            width: 90%;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+            animation: slideUp 0.3s ease;
+        }
+        
+        @keyframes slideUp {
+            from { transform: translateY(50px); opacity: 0; }
+            to { transform: translateY(0); opacity: 1; }
+        }
+        
+        .confirm-header {
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: var(--amazon-dark);
+            margin-bottom: 16px;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+        
+        .confirm-message {
+            color: #666;
+            line-height: 1.6;
+            margin-bottom: 24px;
+        }
+        
+        .confirm-actions {
+            display: flex;
+            gap: 12px;
+            justify-content: flex-end;
+        }
+        
+        .confirm-btn {
+            padding: 12px 24px;
+            border: none;
+            border-radius: 8px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+        
+        .confirm-btn.cancel {
+            background: #e5e7eb;
+            color: var(--amazon-dark);
+        }
+        
+        .confirm-btn.cancel:hover {
+            background: #d1d5db;
+        }
+        
+        .confirm-btn.confirm {
+            background: var(--alert-red);
+            color: white;
+        }
+        
+        .confirm-btn.confirm:hover {
+            background: #b91c1c;
+        }
+    </style>
+
+
+    <div id="confirmModal" class="confirm-modal">
+        <div class="confirm-content">
+            <div class="confirm-header">
+                ⚠️ Clear All Data?
+            </div>
+            <div class="confirm-message">
+                This will remove all loaded data and reset the dashboard to its initial state. 
+                You'll need to upload a new CSV file to view analytics again.
+                <br><br>
+                <strong>This action cannot be undone.</strong>
+            </div>
+            <div class="confirm-actions">
+                <button class="confirm-btn cancel" onclick="closeConfirmModal()">Cancel</button>
+                <button class="confirm-btn confirm" onclick="confirmClearData()">Clear Data</button>
+            </div>
+        </div>
+    </div>
+
+    <div class="dashboard-container">
+        <aside class="sidebar">
+            <div class="sidebar-header">
+                <div class="sidebar-logo">🤖 SortSage Performance Analytics</div>
+                <div class="sidebar-subtitle" id="dateRangeSubtitle">01/11/2025 - 01/12/2025</div>
+            </div>
+            
+            <nav id="navigationMenu">
+                <div class="nav-section">
+                    <div class="nav-title">Overview</div>
+                    <div class="nav-item" onclick="scrollToSection('upload-section')">📤 Upload Data</div>
+                    <div class="nav-item" onclick="scrollToSection('executive-summary')">📑 Executive Summary</div>
+                </div>
+                <div class="nav-section">
+                    <div class="nav-title">Analytics</div>
+                    <div class="nav-item" onclick="scrollToSection('metrics')">📊 Rating Distribution</div>
+                    <div class="nav-item" onclick="scrollToSection('daily-volume')">📈 Daily Volume</div>
+                    <div class="nav-item" onclick="scrollToSection('country-usage')">🌍 Usage by Country</div>
+                    <div class="nav-item" onclick="scrollToSection('document-analysis')">📚 Document Analysis</div>
+                </div>
+                <div class="nav-section">
+                    <div class="nav-title">Assessment</div>
+                    <div class="nav-item" onclick="scrollToSection('risk-assessment')">⚠️ Risk Assessment</div>
+                </div>
+            </nav>
+        </aside>
+        
+        <main class="main-content">
+            <div class="header-controls" id="headerControls" style="display: flex;">
+                <button class="control-btn danger" onclick="clearData()">
+                    🗑️ Clear Data
+                </button>
+                <button class="control-btn" onclick="exportToHTML()">
+                    💾 Export HTML
+                </button>
+            </div>
+            
+            <section class="section" id="upload-section">
+                <div class="section-header">
+                    <div>
+                        <div class="section-title">
+                            📤 Upload Your Data
+                            <span class="confidence-badge confidence-high">Required</span>
+                        </div>
+                        <div class="section-subtitle">Upload your SortSage conversation data CSV file</div>
+                    </div>
+                </div>
+                
+                <div class="instructions-box">
+                    <div class="instructions-title">
+                        📋 CSV Format Requirements
+                    </div>
+                    <p style="line-height: 1.6; margin-bottom: 12px;">
+                        Your CSV should contain these columns:
+                    </p>
+                    <ul style="line-height: 1.8; margin-left: 20px;">
+                        <li><strong>Creation Date</strong> - Date of conversation (DD/MM/YYYY format)</li>
+                        <li><strong>Conversation ID</strong> - Unique conversation identifier</li>
+                        <li><strong>User Prompt</strong> - User's question or query</li>
+                        <li><strong>Rating</strong> - User rating (1-5 stars, optional)</li>
+                        <li><strong>Work Location Country</strong> - User's country (optional)</li>
+                        <li><strong>Work Location Building Code</strong> - Facility code (optional)</li>
+                        <li><strong>Feedback Root Cause</strong> - User feedback (optional)</li>
+                        <li><strong>Document Titles</strong> - Referenced documents (optional, pipe-separated)</li>
+                    </ul>
+                </div>
+                
+                <div id="uploadZoneContainer">
+                    <div class="upload-zone" id="uploadZone" onclick="document.getElementById('fileInput').click()">
+                        <div class="upload-icon">📊</div>
+                        <div class="upload-title">Drop your CSV file here</div>
+                        <div class="upload-subtitle">or click to browse • Supports CSV format • Max 10MB</div>
+                        <button class="upload-btn">Choose File</button>
+                    </div>
+                    <input type="file" id="fileInput" accept=".csv" style="display: none;" onchange="handleFileSelect(event)">
+                </div>
+
+                <div class="insight-card">
+                    <div style="font-weight: 600; color: var(--amazon-blue); margin-bottom: 8px;">💡 Getting Started</div>
+                    <div style="font-size: 14px; line-height: 1.6;">
+                        Upload your SortSage conversation export CSV file to generate comprehensive analytics including rating distribution, 
+                        geographic analysis, document usage patterns, and risk assessment for low-rated interactions.
+                    </div>
+                </div>
+            </section>
+
+            <div id="dynamicContent">
+                <section class="section" id="executive-summary">
+                    <div class="section-header">
+                        <div class="section-title">
+                            📑 Executive Summary
+                            <span class="confidence-badge confidence-high">High Confidence</span>
+                        </div>
+                        <div class="section-subtitle">Core insights from SortSage AI Assistant performance</div>
+                    </div>
+                    
+                    <div class="kpi-grid">
+                        <div class="kpi-card">
+                            <div class="kpi-label">Total Conversations</div>
+                            <div class="kpi-value">342</div>
+                            <div class="kpi-trend">↑ Active usage</div>
+                        </div>
+                        <div class="kpi-card">
+                            <div class="kpi-label">Total Messages</div>
+                            <div class="kpi-value">718</div>
+                            <div class="kpi-trend">↑ User engagement</div>
+                        </div>
+                        <div class="kpi-card">
+                            <div class="kpi-label">Average Rating</div>
+                            <div class="kpi-value">3.7/5.0</div>
+                            <div class="kpi-trend">↑ Strong satisfaction</div>
+                        </div>
+                        <div class="kpi-card">
+                            <div class="kpi-label">5-Star Responses</div>
+                            <div class="kpi-value">53%</div>
+                            <div class="kpi-trend">↑ High quality</div>
+                        </div>
+                        <div class="kpi-card">
+                            <div class="kpi-label">Countries Served</div>
+                            <div class="kpi-value">10</div>
+                            <div class="kpi-trend">↑ Geographic reach</div>
+                        </div>
+                    </div>
+
+                    
+                    <div style="background: linear-gradient(135deg, #fef3c7 0%, #fde68a 100%); border-left: 4px solid var(--warning-yellow); padding: 20px; border-radius: 8px; margin: 24px 0;">
+                        <div style="font-weight: 600; color: #92400e; margin-bottom: 12px; font-size: 16px;">📚 Document Reference Statistics</div>
+                        <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px; margin-bottom: 16px;">
+                            <div style="text-align: center;">
+                                <div style="font-size: 32px; font-weight: bold; color: var(--amazon-dark);">726</div>
+                                <div style="font-size: 12px; color: #666; text-transform: uppercase;">Unique SOPs/Docs</div>
+                            </div>
+                            <div style="text-align: center;">
+                                <div style="font-size: 32px; font-weight: bold; color: var(--amazon-dark);">4530</div>
+                                <div style="font-size: 12px; color: #666; text-transform: uppercase;">Total References</div>
+                            </div>
+                            <div style="text-align: center;">
+                                <div style="font-size: 32px; font-weight: bold; color: var(--amazon-dark);">6.3</div>
+                                <div style="font-size: 12px; color: #666; text-transform: uppercase;">Avg Docs/Query</div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                </section>
+
+                
+                <section class="section" id="document-analysis">
+                    <div class="section-header">
+                        <div class="section-title">
+                            📚 Document Usage Analysis
+                            <span class="confidence-badge confidence-high">High Confidence</span>
+                        </div>
+                        <div class="section-subtitle">Most frequently referenced SOPs and documents</div>
+                    </div>
+                    
+                    <table class="data-table">
+                        <thead>
+                            <tr>
+                                <th style="width: 60px;">Rank</th>
+                                <th>Document/SOP Title</th>
+                                <th style="width: 120px;">References</th>
+                                <th style="width: 120px;">% of Total</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            
+                <tr>
+                    <td style="text-align: center; font-weight: bold; color: var(--amazon-orange);">#1</td>
+                    <td><strong>ROC_EU Transfers Guidelines</strong></td>
+                    <td style="text-align: center; font-weight: bold;">149</td>
+                    <td style="text-align: center;">3.3%</td>
+                </tr>
+            
+                <tr>
+                    <td style="text-align: center; font-weight: bold; color: var(--amazon-orange);">#2</td>
+                    <td><strong>ROC_DM_FLO Add Truck PanEU</strong></td>
+                    <td style="text-align: center; font-weight: bold;">67</td>
+                    <td style="text-align: center;">1.5%</td>
+                </tr>
+            
+                <tr>
+                    <td style="text-align: center; font-weight: bold; color: var(--amazon-orange);">#3</td>
+                    <td><strong>ROC_IM Brexit EU-UK ATS Outbound</strong></td>
+                    <td style="text-align: center; font-weight: bold;">57</td>
+                    <td style="text-align: center;">1.3%</td>
+                </tr>
+            
+                <tr>
+                    <td style="text-align: center; font-weight: bold; color: var(--amazon-orange);">#4</td>
+                    <td><strong>ROC_RS EU-OBRS Case</strong></td>
+                    <td style="text-align: center; font-weight: bold;">56</td>
+                    <td style="text-align: center;">1.2%</td>
+                </tr>
+            
+                <tr>
+                    <td style="text-align: center; font-weight: bold; color: var(--amazon-orange);">#5</td>
+                    <td><strong>B2B Official Standards Waterspider Container Stager</strong></td>
+                    <td style="text-align: center; font-weight: bold;">52</td>
+                    <td style="text-align: center;">1.1%</td>
+                </tr>
+            
+                <tr>
+                    <td style="text-align: center; font-weight: bold; color: var(--amazon-orange);">#6</td>
+                    <td><strong>B2B Official Standards Container Loading</strong></td>
+                    <td style="text-align: center; font-weight: bold;">48</td>
+                    <td style="text-align: center;">1.1%</td>
+                </tr>
+            
+                <tr>
+                    <td style="text-align: center; font-weight: bold; color: var(--amazon-orange);">#7</td>
+                    <td><strong>Core Area Manager Leadership Routines</strong></td>
+                    <td style="text-align: center; font-weight: bold;">47</td>
+                    <td style="text-align: center;">1.0%</td>
+                </tr>
+            
+                <tr>
+                    <td style="text-align: center; font-weight: bold; color: var(--amazon-orange);">#8</td>
+                    <td><strong>General Flow Deep-Dive Logic</strong></td>
+                    <td style="text-align: center; font-weight: bold;">45</td>
+                    <td style="text-align: center;">1.0%</td>
+                </tr>
+            
+                <tr>
+                    <td style="text-align: center; font-weight: bold; color: var(--amazon-orange);">#9</td>
+                    <td><strong>ROC_DM_FLO RESCHEDULING REQUESTS</strong></td>
+                    <td style="text-align: center; font-weight: bold;">42</td>
+                    <td style="text-align: center;">0.9%</td>
+                </tr>
+            
+                <tr>
+                    <td style="text-align: center; font-weight: bold; color: var(--amazon-orange);">#10</td>
+                    <td><strong>EUSC FCLM Approved CALM Codes (Labor Tracking)</strong></td>
+                    <td style="text-align: center; font-weight: bold;">39</td>
+                    <td style="text-align: center;">0.9%</td>
+                </tr>
+            
+                <tr>
+                    <td style="text-align: center; font-weight: bold; color: var(--amazon-orange);">#11</td>
+                    <td><strong>ROC_DM_REC Late Truck Cases</strong></td>
+                    <td style="text-align: center; font-weight: bold;">39</td>
+                    <td style="text-align: center;">0.9%</td>
+                </tr>
+            
+                <tr>
+                    <td style="text-align: center; font-weight: bold; color: var(--amazon-orange);">#12</td>
+                    <td><strong>L3 Outbound Process Leadership Routines</strong></td>
+                    <td style="text-align: center; font-weight: bold;">38</td>
+                    <td style="text-align: center;">0.8%</td>
+                </tr>
+            
+                <tr>
+                    <td style="text-align: center; font-weight: bold; color: var(--amazon-orange);">#13</td>
+                    <td><strong>SWA Inbound (IB), Sortation and Inspection</strong></td>
+                    <td style="text-align: center; font-weight: bold;">36</td>
+                    <td style="text-align: center;">0.8%</td>
+                </tr>
+            
+                <tr>
+                    <td style="text-align: center; font-weight: bold; color: var(--amazon-orange);">#14</td>
+                    <td><strong>ROC_DM_FLO Unloading delay</strong></td>
+                    <td style="text-align: center; font-weight: bold;">36</td>
+                    <td style="text-align: center;">0.8%</td>
+                </tr>
+            
+                <tr>
+                    <td style="text-align: center; font-weight: bold; color: var(--amazon-orange);">#15</td>
+                    <td><strong>L3 AR Sort Process Leadership Routines</strong></td>
+                    <td style="text-align: center; font-weight: bold;">35</td>
+                    <td style="text-align: center;">0.8%</td>
+                </tr>
+            
+                <tr>
+                    <td style="text-align: center; font-weight: bold; color: var(--amazon-orange);">#16</td>
+                    <td><strong>ROC_DM Tour Disruptions and Reconnection</strong></td>
+                    <td style="text-align: center; font-weight: bold;">35</td>
+                    <td style="text-align: center;">0.8%</td>
+                </tr>
+            
+                <tr>
+                    <td style="text-align: center; font-weight: bold; color: var(--amazon-orange);">#17</td>
+                    <td><strong>ROC_DM AUDIT GEOALERT CASES</strong></td>
+                    <td style="text-align: center; font-weight: bold;">35</td>
+                    <td style="text-align: center;">0.8%</td>
+                </tr>
+            
+                <tr>
+                    <td style="text-align: center; font-weight: bold; color: var(--amazon-orange);">#18</td>
+                    <td><strong>B2B Official Standards Problem Solve</strong></td>
+                    <td style="text-align: center; font-weight: bold;">35</td>
+                    <td style="text-align: center;">0.8%</td>
+                </tr>
+            
+                <tr>
+                    <td style="text-align: center; font-weight: bold; color: var(--amazon-orange);">#19</td>
+                    <td><strong>L6 OM Leadership Routines</strong></td>
+                    <td style="text-align: center; font-weight: bold;">33</td>
+                    <td style="text-align: center;">0.7%</td>
+                </tr>
+            
+                <tr>
+                    <td style="text-align: center; font-weight: bold; color: var(--amazon-orange);">#20</td>
+                    <td><strong>AMXL Process Standards</strong></td>
+                    <td style="text-align: center; font-weight: bold;">30</td>
+                    <td style="text-align: center;">0.7%</td>
+                </tr>
+            
+                        </tbody>
+                    </table>
+                </section>
+                
+
+                <section class="section" id="metrics">
+                    <div class="section-header">
+                        <div class="section-title">📊 Rating Distribution</div>
+                        <div class="section-subtitle">Performance quality breakdown</div>
+                    </div>
+                    <div class="chart-container">
+                        <canvas id="metricsChart" style="display: block; box-sizing: border-box; height: 400px; width: 1006px;" width="1006" height="400"></canvas>
+                    </div>
+                </section>
+
+                <section class="section" id="daily-volume">
+                    <div class="section-header">
+                        <div class="section-title">📈 Daily Message Volume</div>
+                        <div class="section-subtitle">Conversation activity over time</div>
+                    </div>
+                    <div class="chart-container">
+                        <canvas id="dailyVolumeChart" style="display: block; box-sizing: border-box; height: 400px; width: 1006px;" width="1006" height="400"></canvas>
+                    </div>
+                </section>
+
+                <section class="section" id="country-usage">
+                    <div class="section-header">
+                        <div class="section-title">🌍 Usage by Country</div>
+                        <div class="section-subtitle">Geographic distribution</div>
+                    </div>
+                    
+                    <div class="country-card">
+                        <div class="country-flag">🇮🇳</div>
+                        <div style="flex: 1;">
+                            <div class="country-name">India</div>
+                            <div class="country-stats">
+                                <div style="text-align: center;">
+                                    <div class="country-stat-value">197</div>
+                                    <div class="country-stat-label">Messages</div>
+                                </div>
+                                <div style="text-align: center;">
+                                    <div class="country-stat-value">2.9</div>
+                                    <div class="country-stat-label">Avg Rating</div>
+                                </div>
+                                <div style="text-align: center;">
+                                    <div class="country-stat-value">27%</div>
+                                    <div class="country-stat-label">Share</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                
+                    <div class="country-card">
+                        <div class="country-flag">🇬🇧</div>
+                        <div style="flex: 1;">
+                            <div class="country-name">United Kingdom</div>
+                            <div class="country-stats">
+                                <div style="text-align: center;">
+                                    <div class="country-stat-value">168</div>
+                                    <div class="country-stat-label">Messages</div>
+                                </div>
+                                <div style="text-align: center;">
+                                    <div class="country-stat-value">4.1</div>
+                                    <div class="country-stat-label">Avg Rating</div>
+                                </div>
+                                <div style="text-align: center;">
+                                    <div class="country-stat-value">23%</div>
+                                    <div class="country-stat-label">Share</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                
+                    <div class="country-card">
+                        <div class="country-flag">🇫🇷</div>
+                        <div style="flex: 1;">
+                            <div class="country-name">France</div>
+                            <div class="country-stats">
+                                <div style="text-align: center;">
+                                    <div class="country-stat-value">88</div>
+                                    <div class="country-stat-label">Messages</div>
+                                </div>
+                                <div style="text-align: center;">
+                                    <div class="country-stat-value">4.5</div>
+                                    <div class="country-stat-label">Avg Rating</div>
+                                </div>
+                                <div style="text-align: center;">
+                                    <div class="country-stat-value">12%</div>
+                                    <div class="country-stat-label">Share</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                
+                    <div class="country-card">
+                        <div class="country-flag">🇪🇸</div>
+                        <div style="flex: 1;">
+                            <div class="country-name">Spain</div>
+                            <div class="country-stats">
+                                <div style="text-align: center;">
+                                    <div class="country-stat-value">86</div>
+                                    <div class="country-stat-label">Messages</div>
+                                </div>
+                                <div style="text-align: center;">
+                                    <div class="country-stat-value">3.1</div>
+                                    <div class="country-stat-label">Avg Rating</div>
+                                </div>
+                                <div style="text-align: center;">
+                                    <div class="country-stat-value">12%</div>
+                                    <div class="country-stat-label">Share</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                
+                    <div class="country-card">
+                        <div class="country-flag">🇩🇪</div>
+                        <div style="flex: 1;">
+                            <div class="country-name">Germany</div>
+                            <div class="country-stats">
+                                <div style="text-align: center;">
+                                    <div class="country-stat-value">85</div>
+                                    <div class="country-stat-label">Messages</div>
+                                </div>
+                                <div style="text-align: center;">
+                                    <div class="country-stat-value">3.6</div>
+                                    <div class="country-stat-label">Avg Rating</div>
+                                </div>
+                                <div style="text-align: center;">
+                                    <div class="country-stat-value">12%</div>
+                                    <div class="country-stat-label">Share</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                
+                    <div class="country-card">
+                        <div class="country-flag">🇨🇿</div>
+                        <div style="flex: 1;">
+                            <div class="country-name">Czech Republic</div>
+                            <div class="country-stats">
+                                <div style="text-align: center;">
+                                    <div class="country-stat-value">47</div>
+                                    <div class="country-stat-label">Messages</div>
+                                </div>
+                                <div style="text-align: center;">
+                                    <div class="country-stat-value">4.4</div>
+                                    <div class="country-stat-label">Avg Rating</div>
+                                </div>
+                                <div style="text-align: center;">
+                                    <div class="country-stat-value">7%</div>
+                                    <div class="country-stat-label">Share</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                
+                    <div class="country-card">
+                        <div class="country-flag">🇮🇹</div>
+                        <div style="flex: 1;">
+                            <div class="country-name">Italy</div>
+                            <div class="country-stats">
+                                <div style="text-align: center;">
+                                    <div class="country-stat-value">41</div>
+                                    <div class="country-stat-label">Messages</div>
+                                </div>
+                                <div style="text-align: center;">
+                                    <div class="country-stat-value">4.8</div>
+                                    <div class="country-stat-label">Avg Rating</div>
+                                </div>
+                                <div style="text-align: center;">
+                                    <div class="country-stat-value">6%</div>
+                                    <div class="country-stat-label">Share</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                
+                    <div class="country-card">
+                        <div class="country-flag">🌍</div>
+                        <div style="flex: 1;">
+                            <div class="country-name">USA</div>
+                            <div class="country-stats">
+                                <div style="text-align: center;">
+                                    <div class="country-stat-value">4</div>
+                                    <div class="country-stat-label">Messages</div>
+                                </div>
+                                <div style="text-align: center;">
+                                    <div class="country-stat-value">1.0</div>
+                                    <div class="country-stat-label">Avg Rating</div>
+                                </div>
+                                <div style="text-align: center;">
+                                    <div class="country-stat-value">1%</div>
+                                    <div class="country-stat-label">Share</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                
+                    <div class="country-card">
+                        <div class="country-flag">🌍</div>
+                        <div style="flex: 1;">
+                            <div class="country-name">ARE</div>
+                            <div class="country-stats">
+                                <div style="text-align: center;">
+                                    <div class="country-stat-value">1</div>
+                                    <div class="country-stat-label">Messages</div>
+                                </div>
+                                <div style="text-align: center;">
+                                    <div class="country-stat-value">N/A</div>
+                                    <div class="country-stat-label">Avg Rating</div>
+                                </div>
+                                <div style="text-align: center;">
+                                    <div class="country-stat-value">0%</div>
+                                    <div class="country-stat-label">Share</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                
+                    <div class="country-card">
+                        <div class="country-flag">🌍</div>
+                        <div style="flex: 1;">
+                            <div class="country-name">CAN</div>
+                            <div class="country-stats">
+                                <div style="text-align: center;">
+                                    <div class="country-stat-value">1</div>
+                                    <div class="country-stat-label">Messages</div>
+                                </div>
+                                <div style="text-align: center;">
+                                    <div class="country-stat-value">N/A</div>
+                                    <div class="country-stat-label">Avg Rating</div>
+                                </div>
+                                <div style="text-align: center;">
+                                    <div class="country-stat-value">0%</div>
+                                    <div class="country-stat-label">Share</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                
+                </section>
+
+                <section class="section" id="risk-assessment">
+                    <div class="section-header">
+                        <div class="section-title">⚠️ Risk Assessment - Low Rated Interactions</div>
+                        <div class="section-subtitle">Conversations requiring attention (1-2 star ratings)</div>
+                    </div>
+                    
+                    
+                        <table class="data-table">
+                            <thead>
+                                <tr>
+                                    <th>Date</th>
+                                    <th>Query</th>
+                                    <th>Rating</th>
+                                    <th>Feedback</th>
+                                    <th>Location</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                
+                    <tr>
+                        <td>03/11/2025</td>
+                        <td style="max-width: 400px;">I need multiple choice answer without describing</td>
+                        <td><span class="rating-star">1 ★☆☆☆☆</span></td>
+                        <td><span class="feedback-critical">Other</span></td>
+                        <td>ESP - BCN14</td>
+                    </tr>
+                
+                    <tr>
+                        <td>04/11/2025</td>
+                        <td style="max-width: 400px;">What is the creation reason code when the carrier did not show up for a scheduled load?</td>
+                        <td><span class="rating-star">1 ★☆☆☆☆</span></td>
+                        <td><span class="feedback-critical">Incorrect answer</span></td>
+                        <td>IND - HYD13</td>
+                    </tr>
+                
+                    <tr>
+                        <td>05/11/2025</td>
+                        <td style="max-width: 400px;">what other sites, apart from XLP1 can accept hazmat, aerosols</td>
+                        <td><span class="rating-star">1 ★☆☆☆☆</span></td>
+                        <td><span class="feedback-critical">Question not answered</span></td>
+                        <td>GBR - BHX2</td>
+                    </tr>
+                
+                    <tr>
+                        <td>05/11/2025</td>
+                        <td style="max-width: 400px;">ISA details    DM-2.0   Dockmaster  Reports  Dock Configuration   FC Menu  + Appointment basic info Appointment Id Appointment barcode Dock Door Status Defect Type Proof of Delivery 307917018997 200 DEFECT NCNS Current/Last location:   Appointment detail  Shipment list  Audit history  Milestones Creation Date 2025/10/31 12:17 CET Carrier request delivery time and date 2025/11/04 21:30 CET Expected arrival date 2025/11/04 21:30 CET Actual Arrival Date Scheduled Processing Date 2025/11/04 21:30 CET - 2025/11/04 22:30 CET Checkin Date Unloaded Date Closed Date Earliest Arrival Time Additional info Group Id Lane ID Appointment type CARP Scheduled as Load type LIVE Supply chain rank Percent needed 0.00 Is palletized Yes Created By ibsc Carrier [ATSIE] Amazon Freight EU Trailer Number SV20VXE Vehicle reference ID 114FW84HM Show eBOL Create VRID cases 114FW84HM Freight type TL Freight terms Pallet type Priority type Freight velocity rating Appointment Comments This is redirection with original ISA: 356263866 and original FC: DTM1 Changed the trailer ID Moved appointment status from ARRIVALSCHEDULED to DEFECT at 11/04/2025 21:30:33 UTC. The vehicle refusal comment was Trailer did not show up at 11/04/2025 21:30:33 UTC. Count info Pallets 33 Cartons 12800 Units 12210</td>
+                        <td><span class="rating-star">1 ★☆☆☆☆</span></td>
+                        <td><span class="feedback-critical">Question not answered</span></td>
+                        <td>GBR - BHX2</td>
+                    </tr>
+                
+                    <tr>
+                        <td>08/11/2025</td>
+                        <td style="max-width: 400px;">should we load jp carts into box sprinter vans</td>
+                        <td><span class="rating-star">2 ★★☆☆☆</span></td>
+                        <td><span class="feedback-critical">No feedback provided</span></td>
+                        <td>GBR - SXW2</td>
+                    </tr>
+                
+                    <tr>
+                        <td>11/11/2025</td>
+                        <td style="max-width: 400px;">move package from FC to colocated SC.</td>
+                        <td><span class="rating-star">1 ★☆☆☆☆</span></td>
+                        <td><span class="feedback-critical">Question not answered</span></td>
+                        <td>USA - FTW2</td>
+                    </tr>
+                
+                    <tr>
+                        <td>13/11/2025</td>
+                        <td style="max-width: 400px;">What is the Paragon Queue for Unloading Delay lobby?</td>
+                        <td><span class="rating-star">1 ★☆☆☆☆</span></td>
+                        <td><span class="feedback-critical">Question not answered</span></td>
+                        <td>IND - HYD13</td>
+                    </tr>
+                
+                    <tr>
+                        <td>13/11/2025</td>
+                        <td style="max-width: 400px;">What is the Paragon Queue for Unloading Delay lobby in Transfers Guidelines?</td>
+                        <td><span class="rating-star">1 ★☆☆☆☆</span></td>
+                        <td><span class="feedback-critical">Question not answered</span></td>
+                        <td>IND - HYD13</td>
+                    </tr>
+                
+                    <tr>
+                        <td>17/11/2025</td>
+                        <td style="max-width: 400px;">For shipper accont TransfersInventoryCorrectionIntermodal, which team handles the unloading delay issues?</td>
+                        <td><span class="rating-star">1 ★☆☆☆☆</span></td>
+                        <td><span class="feedback-critical">Question not answered</span></td>
+                        <td>IND - HYD13</td>
+                    </tr>
+                
+                    <tr>
+                        <td>17/11/2025</td>
+                        <td style="max-width: 400px;">What are the Frontline to Recovery Transfer Scenarios?</td>
+                        <td><span class="rating-star">1 ★☆☆☆☆</span></td>
+                        <td><span class="feedback-critical">Incomplete answer</span></td>
+                        <td>IND - HYD13</td>
+                    </tr>
+                
+                    <tr>
+                        <td>17/11/2025</td>
+                        <td style="max-width: 400px;">what are the required actions for a Dock Congestion: Add Truck scenario?</td>
+                        <td><span class="rating-star">1 ★☆☆☆☆</span></td>
+                        <td><span class="feedback-critical">Question not answered</span></td>
+                        <td>IND - HYD13</td>
+                    </tr>
+                
+                    <tr>
+                        <td>18/11/2025</td>
+                        <td style="max-width: 400px;">According to ROCEU Transfers Guidelines, A carrier reported that their truck is delayed at the ORIGIN location for a VRID . What should I do?</td>
+                        <td><span class="rating-star">1 ★☆☆☆☆</span></td>
+                        <td><span class="feedback-critical">Incorrect answer</span></td>
+                        <td>IND - HYD13</td>
+                    </tr>
+                
+                    <tr>
+                        <td>18/11/2025</td>
+                        <td style="max-width: 400px;">How to handle Dock Congestion Add Truck Scenario?</td>
+                        <td><span class="rating-star">1 ★☆☆☆☆</span></td>
+                        <td><span class="feedback-critical">Incorrect answer</span></td>
+                        <td>IND - HYD13</td>
+                    </tr>
+                
+                    <tr>
+                        <td>18/11/2025</td>
+                        <td style="max-width: 400px;">According to ROCEU Transfers Guidelines, How to handle Dock Congestion Add Truck Scenario?</td>
+                        <td><span class="rating-star">1 ★☆☆☆☆</span></td>
+                        <td><span class="feedback-critical">Incorrect answer</span></td>
+                        <td>IND - HYD13</td>
+                    </tr>
+                
+                    <tr>
+                        <td>20/11/2025</td>
+                        <td style="max-width: 400px;">AFAIK</td>
+                        <td><span class="rating-star">2 ★★☆☆☆</span></td>
+                        <td><span class="feedback-critical">No feedback provided</span></td>
+                        <td>CZE - PRG14</td>
+                    </tr>
+                
+                    <tr>
+                        <td>20/11/2025</td>
+                        <td style="max-width: 400px;">im checking to calculate the total cbm needed for a truck</td>
+                        <td><span class="rating-star">1 ★☆☆☆☆</span></td>
+                        <td><span class="feedback-critical">Question not answered</span></td>
+                        <td>FRA - ORY8</td>
+                    </tr>
+                
+                    <tr>
+                        <td>20/11/2025</td>
+                        <td style="max-width: 400px;">what does ROCeU transfer guidelines SOP state?</td>
+                        <td><span class="rating-star">1 ★☆☆☆☆</span></td>
+                        <td><span class="feedback-critical">Wrong reference found</span></td>
+                        <td>ESP - BCN10</td>
+                    </tr>
+                
+                    <tr>
+                        <td>21/11/2025</td>
+                        <td style="max-width: 400px;">What does ROCEU Transfers Guidelines SOP states?</td>
+                        <td><span class="rating-star">1 ★☆☆☆☆</span></td>
+                        <td><span class="feedback-critical">Incorrect answer</span></td>
+                        <td>IND - HYD13</td>
+                    </tr>
+                
+                    <tr>
+                        <td>24/11/2025</td>
+                        <td style="max-width: 400px;">LP SIM Ticket Template for stolen items</td>
+                        <td><span class="rating-star">1 ★☆☆☆☆</span></td>
+                        <td><span class="feedback-critical">Incorrect answer</span></td>
+                        <td>DEU - LEJ7</td>
+                    </tr>
+                
+                    <tr>
+                        <td>30/11/2025</td>
+                        <td style="max-width: 400px;">CART000qw8y3S - Loaded by @fpharjac onto MAN8 trailer intended for SXW2 - 40 units  CART001ph7ypS - Loaded by @alivraza onto DWR1 intended for DPE2    CART001dxpm5S missorted by @nalogesh to DWR1 intended for DBI2. Volume was a spirals container. 64 units  CART001mgzwbS - missorted to DNG2 intended for DBI7 - 30u. Spirals volume loaded by @nalogesh  - CART4uprhf1gyxiS, volume missorted from spirals. Intended for DNG1. Loader @musseles  CART001dxpm5S missorted by @nalogesh to DWR1 intended for DBI2. Volume was a spirals container. 64 units   write the message to these Associates for the recoaching on loading to L and D with what the AA needs to be coached about is simple english and keep the human touch and formal</td>
+                        <td><span class="rating-star">2 ★★☆☆☆</span></td>
+                        <td><span class="feedback-critical">Question not answered</span></td>
+                        <td>GBR - BHX8</td>
+                    </tr>
+                
+                            </tbody>
+                        </table>
+                    
+                </section>
+            </div>
+        </main>
+    </div>
+
+    <script>
+        let globalData = null;
+        let allCharts = {};
+
+        window.addEventListener('load', function() {
+            const uploadZone = document.getElementById('uploadZone');
+            
+            uploadZone.addEventListener('dragover', (e) => {
+                e.preventDefault();
+                uploadZone.classList.add('dragover');
+            });
+            
+            uploadZone.addEventListener('dragleave', () => {
+                uploadZone.classList.remove('dragover');
+            });
+            
+            uploadZone.addEventListener('drop', (e) => {
+                e.preventDefault();
+                uploadZone.classList.remove('dragover');
+                const files = e.dataTransfer.files;
+                if (files.length > 0) handleFile(files[0]);
+            });
+        });
+
+        function handleFileSelect(event) {
+            const file = event.target.files[0];
+            if (file) handleFile(file);
+        }
+
+        function handleFile(file) {
+            if (!file.name.endsWith('.csv')) {
+                alert('Please upload a CSV file');
+                return;
+            }
+
+            if (file.size > 10 * 1024 * 1024) {
+                alert('File size exceeds 10MB limit');
+                return;
+            }
+
+            Papa.parse(file, {
+                header: true,
+                complete: function(results) {
+                    globalData = results.data.filter(row => row['Creation Date'] || row['Conversation ID']);
+                    if (globalData.length === 0) {
+                        alert('No valid data found in CSV file. Please check the format.');
+                        return;
+                    }
+                    processData(globalData);
+                },
+                error: function(error) {
+                    alert('Error parsing CSV: ' + error.message);
+                }
+            });
+        }
+
+        function processData(data) {
+            const dates = data.map(row => {
+                const dateStr = row['Creation Date'];
+                if (!dateStr) return null;
+                const parts = dateStr.split('/');
+                if (parts.length === 3) {
+                    return new Date(parts[2], parts[1] - 1, parts[0]);
+                }
+                return new Date(dateStr);
+            }).filter(d => d && !isNaN(d));
+            
+            if (dates.length > 0) {
+                const minDate = new Date(Math.min(...dates));
+                const maxDate = new Date(Math.max(...dates));
+                
+                const formatDate = (date) => {
+                    const day = String(date.getDate()).padStart(2, '0');
+                    const month = String(date.getMonth() + 1).padStart(2, '0');
+                    const year = date.getFullYear();
+                    return `${day}/${month}/${year}`;
+                };
+
+                document.getElementById('dateRangeSubtitle').textContent = `${formatDate(minDate)} - ${formatDate(maxDate)}`;
+            }
+
+            const analytics = calculateAnalytics(data);
+            generateDashboard(analytics);
+            document.getElementById('headerControls').style.display = 'flex';
+            updateNavigation();
+        }
+
+        function calculateAnalytics(data) {
+            const totalConversations = new Set(data.map(r => r['Conversation ID'])).size;
+            const totalMessages = data.length;
+            const ratings = data.map(row => parseFloat(row['Rating'])).filter(r => !isNaN(r));
+            const avgRating = ratings.length > 0 ? (ratings.reduce((a, b) => a + b, 0) / ratings.length).toFixed(1) : 0;
+            
+            const ratingCounts = {
+                5: ratings.filter(r => r === 5).length,
+                4: ratings.filter(r => r === 4).length,
+                3: ratings.filter(r => r === 3).length,
+                2: ratings.filter(r => r === 2).length,
+                1: ratings.filter(r => r === 1).length
+            };
+
+            const fiveStarPercentage = ratings.length > 0 ? Math.round((ratingCounts[5] / ratings.length) * 100) : 0;
+
+            // Country analysis
+            const countryData = {};
+            data.forEach(row => {
+                const country = row['Work Location Country'];
+                if (country) {
+                    if (!countryData[country]) {
+                        countryData[country] = { count: 0, ratings: [] };
+                    }
+                    countryData[country].count++;
+                    const rating = parseFloat(row['Rating']);
+                    if (!isNaN(rating)) countryData[country].ratings.push(rating);
+                }
+            });
+
+            Object.keys(countryData).forEach(country => {
+                const ratings = countryData[country].ratings;
+                countryData[country].avgRating = ratings.length > 0 
+                    ? (ratings.reduce((a, b) => a + b, 0) / ratings.length).toFixed(1) 
+                    : 0;
+                countryData[country].percentage = Math.round((countryData[country].count / totalMessages) * 100);
+            });
+
+            // Daily volume
+            const dailyVolume = {};
+            data.forEach(row => {
+                const dateStr = row['Creation Date'];
+                if (dateStr) {
+                    const parts = dateStr.split('/');
+                    if (parts.length === 3) {
+                        const date = new Date(parts[2], parts[1] - 1, parts[0]);
+                        if (!isNaN(date)) {
+                            const dateKey = date.toISOString().split('T')[0];
+                            dailyVolume[dateKey] = (dailyVolume[dateKey] || 0) + 1;
+                        }
+                    }
+                }
+            });
+
+            // Low rated interactions
+            const lowRatedInteractions = data
+                .filter(row => {
+                    const rating = parseFloat(row['Rating']);
+                    return !isNaN(rating) && rating <= 2;
+                })
+                .map(row => ({
+                    date: row['Creation Date'],
+                    query: row['User Prompt'] || 'N/A',
+                    rating: parseFloat(row['Rating']),
+                    feedback: row['Feedback Root Cause'] || row['Free Text Rating'] || 'No feedback provided',
+                    location: `${row['Work Location Country'] || 'N/A'} - ${row['Work Location Building Code'] || 'N/A'}`
+                }));
+
+            // Document/SOP analysis
+            const documentCounts = {};
+            let totalDocReferences = 0;
+            
+            data.forEach(row => {
+                const docTitles = row['Document Titles'];
+                if (docTitles && docTitles.trim()) {
+                    const docs = docTitles.split('|').map(d => d.trim()).filter(d => d);
+                    docs.forEach(doc => {
+                        documentCounts[doc] = (documentCounts[doc] || 0) + 1;
+                        totalDocReferences++;
+                    });
+                }
+            });
+
+            const topDocuments = Object.entries(documentCounts)
+                .sort((a, b) => b[1] - a[1])
+                .slice(0, 20)
+                .map(([doc, count]) => ({
+                    document: doc,
+                    count: count,
+                    percentage: totalDocReferences > 0 ? ((count / totalDocReferences) * 100).toFixed(1) : 0
+                }));
+
+            return {
+                totalConversations,
+                totalMessages,
+                avgRating,
+                ratingCounts,
+                fiveStarPercentage,
+                countryData,
+                uniqueCountries: Object.keys(countryData).length,
+                dailyVolume,
+                lowRatedInteractions,
+                topDocuments,
+                totalDocReferences,
+                uniqueDocuments: Object.keys(documentCounts).length
+            };
+        }
+
+        function generateDashboard(analytics) {
+            const content = `
+                <section class="section" id="executive-summary">
+                    <div class="section-header">
+                        <div class="section-title">
+                            📑 Executive Summary
+                            <span class="confidence-badge confidence-high">High Confidence</span>
+                        </div>
+                        <div class="section-subtitle">Core insights from SortSage AI Assistant performance</div>
+                    </div>
+                    
+                    <div class="kpi-grid">
+                        <div class="kpi-card">
+                            <div class="kpi-label">Total Conversations</div>
+                            <div class="kpi-value">${analytics.totalConversations}</div>
+                            <div class="kpi-trend">↑ Active usage</div>
+                        </div>
+                        <div class="kpi-card">
+                            <div class="kpi-label">Total Messages</div>
+                            <div class="kpi-value">${analytics.totalMessages}</div>
+                            <div class="kpi-trend">↑ User engagement</div>
+                        </div>
+                        <div class="kpi-card">
+                            <div class="kpi-label">Average Rating</div>
+                            <div class="kpi-value">${analytics.avgRating}/5.0</div>
+                            <div class="kpi-trend">↑ Strong satisfaction</div>
+                        </div>
+                        <div class="kpi-card">
+                            <div class="kpi-label">5-Star Responses</div>
+                            <div class="kpi-value">${analytics.fiveStarPercentage}%</div>
+                            <div class="kpi-trend">↑ High quality</div>
+                        </div>
+                        <div class="kpi-card">
+                            <div class="kpi-label">Countries Served</div>
+                            <div class="kpi-value">${analytics.uniqueCountries}</div>
+                            <div class="kpi-trend">↑ Geographic reach</div>
+                        </div>
+                    </div>
+
+                    ${analytics.uniqueDocuments > 0 ? `
+                    <div style="background: linear-gradient(135deg, #fef3c7 0%, #fde68a 100%); border-left: 4px solid var(--warning-yellow); padding: 20px; border-radius: 8px; margin: 24px 0;">
+                        <div style="font-weight: 600; color: #92400e; margin-bottom: 12px; font-size: 16px;">📚 Document Reference Statistics</div>
+                        <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px; margin-bottom: 16px;">
+                            <div style="text-align: center;">
+                                <div style="font-size: 32px; font-weight: bold; color: var(--amazon-dark);">${analytics.uniqueDocuments}</div>
+                                <div style="font-size: 12px; color: #666; text-transform: uppercase;">Unique SOPs/Docs</div>
+                            </div>
+                            <div style="text-align: center;">
+                                <div style="font-size: 32px; font-weight: bold; color: var(--amazon-dark);">${analytics.totalDocReferences}</div>
+                                <div style="font-size: 12px; color: #666; text-transform: uppercase;">Total References</div>
+                            </div>
+                            <div style="text-align: center;">
+                                <div style="font-size: 32px; font-weight: bold; color: var(--amazon-dark);">${(analytics.totalDocReferences / analytics.totalMessages).toFixed(1)}</div>
+                                <div style="font-size: 12px; color: #666; text-transform: uppercase;">Avg Docs/Query</div>
+                            </div>
+                        </div>
+                    </div>
+                    ` : ''}
+                </section>
+
+                ${analytics.topDocuments.length > 0 ? `
+                <section class="section" id="document-analysis">
+                    <div class="section-header">
+                        <div class="section-title">
+                            📚 Document Usage Analysis
+                            <span class="confidence-badge confidence-high">High Confidence</span>
+                        </div>
+                        <div class="section-subtitle">Most frequently referenced SOPs and documents</div>
+                    </div>
+                    
+                    <table class="data-table">
+                        <thead>
+                            <tr>
+                                <th style="width: 60px;">Rank</th>
+                                <th>Document/SOP Title</th>
+                                <th style="width: 120px;">References</th>
+                                <th style="width: 120px;">% of Total</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            ${generateDocumentRows(analytics.topDocuments)}
+                        </tbody>
+                    </table>
+                </section>
+                ` : ''}
+
+                <section class="section" id="metrics">
+                    <div class="section-header">
+                        <div class="section-title">📊 Rating Distribution</div>
+                        <div class="section-subtitle">Performance quality breakdown</div>
+                    </div>
+                    <div class="chart-container">
+                        <canvas id="metricsChart"></canvas>
+                    </div>
+                </section>
+
+                <section class="section" id="daily-volume">
+                    <div class="section-header">
+                        <div class="section-title">📈 Daily Message Volume</div>
+                        <div class="section-subtitle">Conversation activity over time</div>
+                    </div>
+                    <div class="chart-container">
+                        <canvas id="dailyVolumeChart"></canvas>
+                    </div>
+                </section>
+
+                <section class="section" id="country-usage">
+                    <div class="section-header">
+                        <div class="section-title">🌍 Usage by Country</div>
+                        <div class="section-subtitle">Geographic distribution</div>
+                    </div>
+                    ${generateCountryCards(analytics.countryData)}
+                </section>
+
+                <section class="section" id="risk-assessment">
+                    <div class="section-header">
+                        <div class="section-title">⚠️ Risk Assessment - Low Rated Interactions</div>
+                        <div class="section-subtitle">Conversations requiring attention (1-2 star ratings)</div>
+                    </div>
+                    
+                    ${analytics.lowRatedInteractions.length > 0 ? `
+                        <table class="data-table">
+                            <thead>
+                                <tr>
+                                    <th>Date</th>
+                                    <th>Query</th>
+                                    <th>Rating</th>
+                                    <th>Feedback</th>
+                                    <th>Location</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                ${generateLowRatedRows(analytics.lowRatedInteractions)}
+                            </tbody>
+                        </table>
+                    ` : `
+                        <div class="insight-card" style="background: linear-gradient(135deg, #d1fae5 0%, #a7f3d0 100%);">
+                            <div style="font-weight: 600; color: var(--success-green);">✅ Excellent Performance</div>
+                            <div style="font-size: 14px; margin-top: 8px;">No low-rated interactions found!</div>
+                        </div>
+                    `}
+                </section>
+            `;
+
+            document.getElementById('dynamicContent').innerHTML = content;
+
+            setTimeout(() => {
+                createMetricsChart(analytics.ratingCounts, analytics.totalMessages);
+                createDailyVolumeChart(analytics.dailyVolume);
+            }, 500);
+        }
+
+        function generateDocumentRows(topDocuments) {
+            return topDocuments.map((doc, index) => `
+                <tr>
+                    <td style="text-align: center; font-weight: bold; color: var(--amazon-orange);">#${index + 1}</td>
+                    <td><strong>${doc.document}</strong></td>
+                    <td style="text-align: center; font-weight: bold;">${doc.count}</td>
+                    <td style="text-align: center;">${doc.percentage}%</td>
+                </tr>
+            `).join('');
+        }
+
+        function generateCountryCards(countryData) {
+            const flags = {
+                'GBR': '🇬🇧', 'DEU': '🇩🇪', 'FRA': '🇫🇷', 'ITA': '🇮🇹', 
+                'ESP': '🇪🇸', 'CZE': '🇨🇿', 'IND': '🇮🇳', 'POL': '🇵🇱'
+            };
+            const names = {
+                'GBR': 'United Kingdom', 'DEU': 'Germany', 'FRA': 'France', 
+                'ITA': 'Italy', 'ESP': 'Spain', 'CZE': 'Czech Republic', 
+                'IND': 'India', 'POL': 'Poland'
+            };
+
+            return Object.entries(countryData)
+                .sort((a, b) => b[1].count - a[1].count)
+                .map(([code, data]) => `
+                    <div class="country-card">
+                        <div class="country-flag">${flags[code] || '🌍'}</div>
+                        <div style="flex: 1;">
+                            <div class="country-name">${names[code] || code}</div>
+                            <div class="country-stats">
+                                <div style="text-align: center;">
+                                    <div class="country-stat-value">${data.count}</div>
+                                    <div class="country-stat-label">Messages</div>
+                                </div>
+                                <div style="text-align: center;">
+                                    <div class="country-stat-value">${data.avgRating || 'N/A'}</div>
+                                    <div class="country-stat-label">Avg Rating</div>
+                                </div>
+                                <div style="text-align: center;">
+                                    <div class="country-stat-value">${data.percentage}%</div>
+                                    <div class="country-stat-label">Share</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                `).join('');
+        }
+
+        function generateLowRatedRows(interactions) {
+            return interactions.map(interaction => {
+                const stars = '★'.repeat(Math.floor(interaction.rating));
+                const emptyStars = '☆'.repeat(5 - Math.floor(interaction.rating));
+                return `
+                    <tr>
+                        <td>${interaction.date}</td>
+                        <td style="max-width: 400px;">${interaction.query}</td>
+                        <td><span class="rating-star">${interaction.rating} ${stars}${emptyStars}</span></td>
+                        <td><span class="feedback-critical">${interaction.feedback}</span></td>
+                        <td>${interaction.location}</td>
+                    </tr>
+                `;
+            }).join('');
+        }
+
+        function createMetricsChart(ratingCounts, total) {
+            const ctx = document.getElementById('metricsChart');
+            if (!ctx) return;
+            
+            if (allCharts.metricsChart) allCharts.metricsChart.destroy();
+
+            allCharts.metricsChart = new Chart(ctx.getContext('2d'), {
+                type: 'doughnut',
+                data: {
+                    labels: ['5 Stars', '4 Stars', '3 Stars', '2 Stars', '1 Star'],
+                    datasets: [{
+                        data: [ratingCounts[5], ratingCounts[4], ratingCounts[3], ratingCounts[2], ratingCounts[1]],
+                        backgroundColor: ['#0d9488', '#14b8a6', '#FFB347', '#FF9900', '#D13212'],
+                        borderColor: '#fff',
+                        borderWidth: 4
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            position: 'bottom',
+                            labels: { padding: 20, font: { size: 13, weight: 'bold' } }
+                        },
+                        tooltip: {
+                            callbacks: {
+                                label: function(context) {
+                                    const value = context.parsed;
+                                    const percentage = total > 0 ? ((value / total) * 100).toFixed(1) : 0;
+                                    return `${context.label}: ${value} (${percentage}%)`;
+                                }
+                            }
+                        }
+                    },
+                    cutout: '65%'
+                },
+                plugins: [{
+                    id: 'centerText',
+                    beforeDraw: function(chart) {
+                        const ctx = chart.ctx;
+                        const centerX = (chart.chartArea.left + chart.chartArea.right) / 2;
+                        const centerY = (chart.chartArea.top + chart.chartArea.bottom) / 2;
+                        
+                        ctx.textAlign = 'center';
+                        ctx.textBaseline = 'middle';
+                        ctx.font = '14px sans-serif';
+                        ctx.fillStyle = '#666';
+                        ctx.fillText('Total Ratings', centerX, centerY - 15);
+                        
+                        ctx.font = 'bold 32px sans-serif';
+                        ctx.fillStyle = '#232F3E';
+                        ctx.fillText(total, centerX, centerY + 15);
+                    }
+                }]
+            });
+        }
+
+        function createDailyVolumeChart(dailyVolume) {
+            const ctx = document.getElementById('dailyVolumeChart');
+            if (!ctx) return;
+            
+            if (allCharts.dailyVolumeChart) allCharts.dailyVolumeChart.destroy();
+
+            const sortedDates = Object.keys(dailyVolume).sort((a, b) => new Date(a) - new Date(b));
+            const volumes = sortedDates.map(date => dailyVolume[date]);
+
+            const formattedDates = sortedDates.map(date => {
+                const d = new Date(date);
+                return `${String(d.getDate()).padStart(2, '0')}/${String(d.getMonth() + 1).padStart(2, '0')}/${d.getFullYear()}`;
+            });
+
+            allCharts.dailyVolumeChart = new Chart(ctx.getContext('2d'), {
+                type: 'bar',
+                data: {
+                    labels: formattedDates,
+                    datasets: [{
+                        label: 'Messages',
+                        data: volumes,
+                        backgroundColor: '#FFC470',
+                        borderRadius: 4
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: { 
+                        legend: { display: false },
+                        tooltip: { enabled: true }
+                    },
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            title: { display: true, text: 'Number of Messages' }
+                        },
+                        x: {
+                            title: { display: true, text: 'Date' },
+                            ticks: { maxRotation: 45, minRotation: 45 }
+                        }
+                    }
+                }
+            });
+        }
+
+        function updateNavigation() {
+            const hasDocuments = globalData && globalData.some(r => r['Document Titles']);
+            
+            let navHTML = `
+                <div class="nav-section">
+                    <div class="nav-title">Overview</div>
+                    <div class="nav-item" onclick="scrollToSection('upload-section')">📤 Upload Data</div>
+                    <div class="nav-item" onclick="scrollToSection('executive-summary')">📑 Executive Summary</div>
+                </div>
+                <div class="nav-section">
+                    <div class="nav-title">Analytics</div>
+                    <div class="nav-item" onclick="scrollToSection('metrics')">📊 Rating Distribution</div>
+                    <div class="nav-item" onclick="scrollToSection('daily-volume')">📈 Daily Volume</div>
+                    <div class="nav-item" onclick="scrollToSection('country-usage')">🌍 Usage by Country</div>
+                    ${hasDocuments ? '<div class="nav-item" onclick="scrollToSection(\'document-analysis\')">📚 Document Analysis</div>' : ''}
+                </div>
+                <div class="nav-section">
+                    <div class="nav-title">Assessment</div>
+                    <div class="nav-item" onclick="scrollToSection('risk-assessment')">⚠️ Risk Assessment</div>
+                </div>
+            `;
+            
+            document.getElementById('navigationMenu').innerHTML = navHTML;
+        }
+
+        function scrollToSection(id) {
+            const element = document.getElementById(id);
+            if (element) {
+                element.scrollIntoView({ behavior: 'smooth', block: 'start' });
+            }
+        }
+
+        function clearData() {
+            document.getElementById('confirmModal').classList.add('active');
+        }
+
+        function closeConfirmModal() {
+            document.getElementById('confirmModal').classList.remove('active');
+        }
+
+        function confirmClearData() {
+            // Destroy all charts
+            Object.values(allCharts).forEach(chart => {
+                if (chart && chart.destroy) {
+                    chart.destroy();
+                }
+            });
+            allCharts = {};
+            
+            // Clear data
+            globalData = null;
+            
+            // Clear dynamic content
+            document.getElementById('dynamicContent').innerHTML = '';
+            
+            // Reset sidebar
+            document.getElementById('dateRangeSubtitle').textContent = 'No data loaded';
+            document.getElementById('navigationMenu').innerHTML = `
+                <div class="nav-section">
+                    <div class="nav-title">Overview</div>
+                    <div class="nav-item active" onclick="scrollToSection('upload-section')">📤 Upload Data</div>
+                </div>
+            `;
+            
+            // Hide header controls
+            document.getElementById('headerControls').style.display = 'none';
+            
+            // Clear file input
+            document.getElementById('fileInput').value = '';
+            
+            // Close confirmation modal
+            closeConfirmModal();
+            
+            // Scroll to upload section
+            scrollToSection('upload-section');
+            
+            // Show success message
+            setTimeout(() => {
+                alert('✅ Data cleared successfully. Upload a new CSV file to begin analysis.');
+            }, 300);
+        }
+
+        function exportToHTML() {
+            const blob = new Blob([document.documentElement.outerHTML], { type: 'text/html' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = 'sortsage-analytics-' + new Date().toISOString().split('T')[0] + '.html';
+            a.click();
+            URL.revokeObjectURL(url);
+        }
+    </script>
+
+
+</x-artifact></body><contextsearch-widgets id="contextsearch-widgets" style="--cs-zoom: 1; --cs-scale: calc( 1 / var(--cs-zoom,1) * var(--cs-custom-scale,1));"></contextsearch-widgets></html>
